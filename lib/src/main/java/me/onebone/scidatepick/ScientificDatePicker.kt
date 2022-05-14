@@ -2,8 +2,7 @@ package me.onebone.scidatepick
 
 import android.graphics.PathMeasure
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.awaitDragOrCancellation
-import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -14,16 +13,15 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.consumePositionChange
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 
 @Composable
 fun ScientificDatePicker(
-	modifier: Modifier
+	modifier: Modifier,
+	dragAmplifier: Float
 ) {
 	val padding = with(LocalDensity.current) { DefaultDatePickerPadding.toPx() }
 
@@ -56,23 +54,34 @@ fun ScientificDatePicker(
 		}
 	}
 
+	var earthOffset by remember(offsets) { mutableStateOf(offsets[0]) }
+
 	Canvas(
 		modifier = modifier
 			.onGloballyPositioned {
 				size = it.size
 			}
-			.pointerInput(Unit) {
-				while (true) {
-					awaitPointerEventScope {
-						val pointer = awaitFirstDown()
+			.pointerInput(offsets) {
+				var accumulated: Offset = Offset.Zero
+				var startEarthOffset: Offset = Offset.Zero
 
-						val change = awaitDragOrCancellation(pointer.id) ?: return@awaitPointerEventScope
+				detectDragGestures(
+					onDragStart = {
+						startEarthOffset = earthOffset
+						accumulated = Offset.Zero
+					},
+					onDrag = { _, dragAmount ->
+						accumulated += dragAmount
 
-						val position = change.position
-						val delta = change.positionChange()
-						change.consumePositionChange()
+						val target = accumulated + startEarthOffset
+
+						earthOffset = offsets.minByOrNull {
+							val dx = it.x - target.x
+							val dy = it.y - target.y
+							(dx * dx) + (dy * dy)
+						}!!
 					}
-				}
+				)
 			}
 	) {
 		if (path != null) {
@@ -83,10 +92,11 @@ fun ScientificDatePicker(
 			)
 		}
 
-		// TODO: remove it
-		offsets.forEach {
-			drawCircle(Color.Red, radius = 5f, center = it)
-		}
+		drawCircle(
+			color = Color.Blue,
+			radius = 20f,
+			center = earthOffset
+		)
 	}
 }
 
