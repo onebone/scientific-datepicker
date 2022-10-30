@@ -31,8 +31,7 @@ class MainActivity : ComponentActivity() {
 							.background(Color.Black)
 							.padding(16.dp)
 							.fillMaxWidth()
-							.aspectRatio(2.5f),
-						dragAmplifier = 2f
+							.aspectRatio(2.5f)
 					)
 				}
 			}
