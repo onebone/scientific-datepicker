@@ -2,14 +2,16 @@ package me.onebone.scidatepick
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.IntSize
 import java.time.LocalDate
 import kotlin.math.*
@@ -22,17 +24,18 @@ fun ScientificDatePicker(
 	date: LocalDate,
 	onDateChange: (LocalDate) -> Unit
 ) {
-	var earthOffset by remember {
-		mutableStateOf<Offset?>(null)
+	val earthRadian = remember(date) {
+		val isLeap = isLeapYear(date.year)
+		val days = if (isLeap) 366 else 365
+
+		date.dayOfYear / days.toFloat() * 2 * PI_F
 	}
+
+	val newEarthRadian by rememberUpdatedState(newValue = earthRadian)
+	val newDate by rememberUpdatedState(newValue = date)
 
 	Canvas(
 		modifier = modifier
-			.onGloballyPositioned {
-				if (earthOffset == null) {
-					earthOffset = getOffsetByAngle(it.size, 0f)
-				}
-			}
 			.pointerInput(Unit) {
 				var accumulated: Offset = Offset.Zero
 				var startEarthOffset: Offset = Offset.Zero
@@ -40,7 +43,7 @@ fun ScientificDatePicker(
 
 				detectDragGestures(
 					onDragStart = {
-						startEarthOffset = earthOffset!!
+						startEarthOffset = getOffsetByAngle(size, newEarthRadian)
 						accumulated = Offset.Zero
 					},
 					onDrag = { _, dragAmount ->
@@ -49,25 +52,25 @@ fun ScientificDatePicker(
 						val target = accumulated + startEarthOffset
 
 						val radian = atan2(target.y - size.height / 2f, target.x - size.width / 2f).let {
-							if (it < 0) it + PI_F*2
+							if (it < 0) it + 2 * PI_F
 							else it
 						}
-						earthOffset = getOffsetByAngle(size, radian)
 
 						val year =
-							if (lastRadian in PI_F * 0.5f..PI_F && radian in PI_F..PI_F * 1.5f) {
-								date.year + 1
-							} else if (lastRadian in PI_F..PI_F * 1.5f && radian in PI_F * 0.5f..PI_F) {
-								date.year - 1
+							if (lastRadian in 1.5f * PI_F..2f * PI_F && radian in 0f..PI_F * 0.5f) {
+								newDate.year + 1
+							} else if (lastRadian in 0f..PI_F * 0.5f && radian in PI_F * 1.5f..PI_F * 2f) {
+								newDate.year - 1
 							} else {
-								date.year
+								newDate.year
 							}
 
 						lastRadian = radian
 
 						val days = if (isLeapYear(year)) 366 else 365
-						val progress = (radian + PI_F) / (2*PI_F) - 0.5f
+						val progress = radian / (2*PI_F)
 						val nthDay = ceil(days * progress).toInt().coerceIn(1, days)
+
 						onDateChange(LocalDate.ofYearDay(year, nthDay))
 					}
 				)
@@ -75,9 +78,8 @@ fun ScientificDatePicker(
 	) {
 		drawArc(DefaultOrbitColor, startAngle = 0f, sweepAngle = 360f, useCenter = false, style = Stroke(width = 5f))
 
-		if (earthOffset != null) {
-			drawEarth(earthOffset!!.x, earthOffset!!.y)
-		}
+		val earthOffset = getOffsetByAngle(IntSize(size.width.toInt(), size.height.toInt()), earthRadian)
+		drawEarth(earthOffset.x, earthOffset.y)
 	}
 }
 
