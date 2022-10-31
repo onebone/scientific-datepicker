@@ -8,10 +8,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.IntSize
 import java.time.LocalDate
 import kotlin.math.*
@@ -33,6 +33,8 @@ fun ScientificDatePicker(
 
 	val newEarthRadian by rememberUpdatedState(newValue = earthRadian)
 	val newDate by rememberUpdatedState(newValue = date)
+
+	val earthBitmap = ImageBitmap.imageResource(id = R.drawable.img_earth)
 
 	Canvas(
 		modifier = modifier
@@ -79,12 +81,8 @@ fun ScientificDatePicker(
 		drawArc(DefaultOrbitColor, startAngle = 0f, sweepAngle = 360f, useCenter = false, style = Stroke(width = 5f))
 
 		val earthOffset = getOffsetByAngle(IntSize(size.width.toInt(), size.height.toInt()), earthRadian)
-		drawEarth(earthOffset.x, earthOffset.y)
+		drawImage(earthBitmap, topLeft = earthOffset - Offset(earthBitmap.width / 2f, earthBitmap.height / 2f))
 	}
-}
-
-internal fun DrawScope.drawEarth(x: Float, y: Float) {
-	drawCircle(Color.Blue, radius = 15f, center = Offset(x, y))
 }
 
 private fun getOffsetByAngle(size: IntSize, radian: Float): Offset {
