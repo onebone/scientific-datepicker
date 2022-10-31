@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
 							modifier = Modifier
 								.padding(16.dp)
 								.fillMaxWidth()
-								.aspectRatio(2.5f),
+								.aspectRatio(1.2f),
 							date = date,
 							onDateChange = { date = it }
 						)

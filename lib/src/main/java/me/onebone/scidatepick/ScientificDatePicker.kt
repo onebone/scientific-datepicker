@@ -35,6 +35,7 @@ fun ScientificDatePicker(
 	val newDate by rememberUpdatedState(newValue = date)
 
 	val earthBitmap = ImageBitmap.imageResource(id = R.drawable.img_earth)
+	val sunBitmap = ImageBitmap.imageResource(id = R.drawable.img_sun)
 
 	Canvas(
 		modifier = modifier
@@ -82,6 +83,19 @@ fun ScientificDatePicker(
 
 		val earthOffset = getOffsetByAngle(IntSize(size.width.toInt(), size.height.toInt()), earthRadian)
 		drawImage(earthBitmap, topLeft = earthOffset - Offset(earthBitmap.width / 2f, earthBitmap.height / 2f))
+
+		val focus = run {
+			val a = size.width / 2f
+			val b = size.height / 2f
+
+			if (a < b) {
+				Offset(0f, sqrt(b*b - a*a))
+			} else {
+				Offset(-sqrt(a*a - b*b), 0f)
+			} + Offset(a, b)
+		}
+
+		drawImage(sunBitmap, topLeft = focus - Offset(sunBitmap.width / 2f, sunBitmap.height / 2f))
 	}
 }
 
